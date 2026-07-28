@@ -31,7 +31,7 @@ export default function BudgetForm() {
             className="w-full bg-white border border-slate-400 p-2 rounded-lg"
             placeholder="Define tu presupuesto"
             name="budget"
-            value={budget}
+            value={budget === 0 ? '' : budget}
             onChange={handleChange}/>
             <input 
             type="submit" 
