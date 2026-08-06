@@ -1,4 +1,3 @@
-import { categories } from "../data/categories";
 import DatePicker from "react-date-picker";
 import 'react-calendar/dist/Calendar.css'
 import 'react-date-picker/dist/DatePicker.css'
@@ -6,11 +5,12 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import type { DraftExpense, Value } from "../types";
 import ErrorMessage from "./ErrorMessage";
 import { useBudget } from "../hooks/useBudget";
+import CategoryFilter from "./CategoryFilter";
 
 export default function ExpenseForm() {
 
     const [expense, setExpense] = useState<DraftExpense>({
-        amount: 0,
+        amount: '' as unknown as number,
         expenseName: '',
         category: '',
         date: new Date()
@@ -32,10 +32,19 @@ export default function ExpenseForm() {
     const handleChange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
         const { name, value } = e.target
         const isAmountField = ['amount'].includes(name)
-        setExpense({
-            ...expense,
-            [name]: isAmountField ? +value : value
-        })
+        if (isAmountField) {
+            if (/^\d*$/.test(value)) {
+                setExpense({
+                    ...expense,
+                    amount: value as unknown as number
+                })
+            }
+        } else {
+            setExpense({
+                ...expense,
+                [name]: value
+            })
+        }
     }
 
     const handleChangeDate = (value: Value) => {
@@ -49,14 +58,17 @@ export default function ExpenseForm() {
 
         e.preventDefault()
 
+        const amountNumber = +expense.amount
+        const amountString = String(expense.amount)
+
         //validar
-        if (Object.values(expense).includes('')) {
-            setError('Todos los campos son obligatorios')
+        if (expense.expenseName.trim() === '' || expense.category.trim() === '' || amountString === '' || isNaN(amountNumber) || amountNumber <= 0) {
+            setError('Todos los campos son obligatorios y la cantidad debe ser mayor a 0')
             return
         }
 
         //validar no sobregirar
-        if ((expense.amount - previousAmount) > remainingBudget) {
+        if ((amountNumber - previousAmount) > remainingBudget) {
             setError('El monto asignado supera el valor del presupuesto')
             return
         }
@@ -65,15 +77,20 @@ export default function ExpenseForm() {
         setError('')
 
         //agregar o actualizar el gasto
+        const expenseToSave: DraftExpense = {
+            ...expense,
+            amount: amountNumber
+        }
+
         if (state.editingId) {
-            dispatch({ type: 'update-expense', payload: { expense: { id: state.editingId, ...expense } } })
+            dispatch({ type: 'update-expense', payload: { expense: { id: state.editingId, ...expenseToSave } } })
         } else {
-            dispatch({ type: 'add-expense', payload: { expense } })
+            dispatch({ type: 'add-expense', payload: { expense: expenseToSave } })
         }
 
         //reiniciar state
         setExpense({
-            amount: 0,
+            amount: '' as unknown as number,
             expenseName: '',
             category: '',
             date: new Date()
@@ -108,13 +125,15 @@ export default function ExpenseForm() {
                     className="text-xl"
                 >Cantidad:</label>
                 <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     id="amount"
                     placeholder=" Añade la cantiad del gasto.(Ej:300)"
                     className="bg-slate-100 rounded-lg p-2"
                     name="amount"
                     onChange={handleChange}
-                    value={expense.amount === 0 ? '' : expense.amount}
+                    value={expense.amount}
                 />
             </div>
             <div className="flex flex-col gap-2">
@@ -122,20 +141,10 @@ export default function ExpenseForm() {
                     htmlFor="category"
                     className="text-xl"
                 >Categoria:</label>
-                <select
-                    id="category"
-                    className="bg-slate-100 rounded-lg p-2"
-                    name="category"
-                    onChange={handleChange}
+                <CategoryFilter
                     value={expense.category}
-                >
-                    <option value="">-- Seleccione una categoria --</option>
-                    {categories.map(category => (
-                        <option
-                            key={category.id}
-                            value={category.id}>{category.name}</option>
-                    ))}
-                </select>
+                    onChange={(id) => setExpense({ ...expense, category: id })}
+                />
             </div>
             <div className="flex flex-col gap-2">
                 <label
@@ -143,7 +152,7 @@ export default function ExpenseForm() {
                     className="tetx-xl"
                 >Fecha Gasto:</label>
                 <DatePicker
-                    className="bg-slate-100 p-2 border-0 ronded-lg"
+                    className="bg-slate-100 p-2 rounded-lg w-full border-none outline-none"
                     onChange={handleChangeDate}
                     value={expense.date}
                 />
