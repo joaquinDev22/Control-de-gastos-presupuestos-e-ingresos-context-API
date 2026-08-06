@@ -7,7 +7,13 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [
     react(),
-    babel({ presets: [reactCompilerPreset()] }),
+    babel({
+      presets: [reactCompilerPreset()],
+      include: /src\/.*\.[jt]sx?$/,
+    }),
     tailwindcss()
   ],
+  optimizeDeps: {
+    include: ['react-swipeable-list', 'prop-types']
+  }
 })

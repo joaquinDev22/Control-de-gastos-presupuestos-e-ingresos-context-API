@@ -6,10 +6,10 @@ import ExpenseDetail from "./ExpenseDetail"
 export default function ExpenseList() {
     const {state} = useBudget()
 
-    const isEmpty = useMemo(() => state.expenses.length === 0, state.expenses)
+    const isEmpty = useMemo(() => state.expenses.length === 0, [state.expenses])
 
   return (
-    <div className="bg-white rounded-xlmax-w-3xl mx-auto shadow-lg rounded-xl p-5">
+    <div className="bg-white max-w-3xl mx-auto shadow-lg rounded-xl p-5">
         {isEmpty ? <p className="text-gray-600 text-2xl font-bold">No hay gastos</p> : (
             <>
                 <p className="text-gray-600 text-2xl font-bold my-5">Listado de Gastos</p>
@@ -18,7 +18,7 @@ export default function ExpenseList() {
                         key={expense.id}
                         expense={expense}
                     />
-                ))}
+                ))} 
             </>
         )}
 
